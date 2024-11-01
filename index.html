@@ -3,15 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple PWA</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="//unpkg.com/grapesjs/dist/css/grapes.min.css">
+    <script src="//unpkg.com/grapesjs"></script>
+
+    <style>
+        #gjs {
+            border: 3px solid #444;
+          }
+          
+          /* Reset some default styling */
+          .gjs-cv-canvas {
+            top: 0;
+            width: 100%;
+            height: 100%;
+          }
+
+          .gjs-block {
+            width: auto;
+            height: auto;
+            min-height: auto;
+          }
+
+          .panel__top {
+            padding: 0;
+            width: 100%;
+            display: flex;
+            position: initial;
+            justify-content: center;
+            justify-content: space-between;
+          }
+
+          .panel__basic-actions {
+            position: initial;
+          }
+
+          .editor-row {
+            display: flex;
+            justify-content: flex-start;
+            align-items: stretch;
+            flex-wrap: nowrap;
+            height: 300px;
+          }
+          
+          .editor-canvas {
+            flex-grow: 1;
+          }
+          
+          .panel__right {
+            flex-basis: 230px;
+            position: relative;
+            overflow-y: auto;
+          }
+
+          .panel__switcher {
+            position: initial;
+          }
+          .panel__devices {
+            position: initial;
+          }
+
+    </style>
 </head>
 <body>
-    
-    <h1>Simple PWA</h1>
-    <button id="alertButton">Click</button>
+    <div class="panel__top">
+        <div class="panel__basic-actions"></div>
+        <div class="panel__devices"></div>
+        <div class="panel__switcher"></div>
+    </div>
 
-    <script src="app.js"></script>
+    <div class="editor-row">
+        <div class="editor-canvas">
+            <div id="gjs"></div>
+        </div>
+
+        <div class="panel__right">
+            <div class="layers-container"></div>
+            <div class="styles-container"></div>
+            <div class="traits-container"></div>
+        </div>
+    </div>
+
+    
+    <div id="blocks"></div>
+
+    <script>
+
+        const editor = grapesjs.init({
+            container: '#gjs',
+            fromElement: true,
+            height: '300px',
+            width: 'auto',
+            storageManager: false,
+            layerManager: {
+                appendTo: '.layers-container',
+            },
+            panels: {
+                defaults: [
+                    {
+                        id: 'panel-devices',
+                        el: '.panel-devices',
+                        buttons: [
+                            {
+                                id: 'device-desktop',
+                                label: 'Escritorio',
+                                command: 'set-device-desktop',
+                                active: true,
+                                togglable: false,
+                            },
+                            {
+                                id: 'device-mobile',
+                                label: 'Móvil',
+                                command: 'set-device-mobile',
+                                togglable: false,
+                            },
+                        ],
+                    },
+                    {
+                        id: 'layers',
+                        el: '.panel__right',
+                        resizable: {
+                            maxDim: 350,
+                            minDim: 200,
+                            tc: false,
+                            cl: true,
+                            cr: false,
+                            bc: false,
+                            keyWidth: 'flex-basis'
+                        },
+                    },
+                    {
+                        id: 'panel-switcher',
+                        el: '.panel__switcher',
+                        buttons: [
+                            {
+                                id: 'show-layers',
+                                active: true,
+                                label: 'Capas',
+                                command: 'show-layers',
+                                togglable: false,
+                            },
+                            {
+                                id: 'show-style',
+                                active: true,
+                                label: 'Estilos',
+                                command: 'show-styles',
+                                togglable: false,
+                            },
+                            {
+                                id: 'show-traits',
+                                active: true,
+                                label: 'Rasgos',
+                                command: 'show-traits',
+                                togglable: false,
+                            }
+                        ],
+                    }
+                ],
+            },
+            traitManager: {
+                appendTo: '.traits-container'
+            },
+            blockManager: {
+                appendTo: '#blocks',
+                blocks: [
+                    {
+                        id: 'section',
+                        label: '<section>Bloque de contenido</section>',
+                        attributes: {class: 'gjs-block-section'},
+                        content: `<section>Bloque de contenido</section>`,
+                    },
+                    {
+                        id: 'text',
+                        label: 'Texto',
+                        content: '<div data-gjs-type="text">Modifica el texto...</div>'
+                    },
+                    {
+                        id: 'image',
+                        label: 'Imagen',
+                        select: true,
+                        content: {type: 'image'},
+                        activate: true,
+                    }
+                ],
+            },
+            selectorManager: {
+                appendTo: '.styles-container',
+            },
+            styleManager: {
+                appendTo: '.styles-container',
+                sectors: [
+                    {
+                        name: 'Dimensiones',
+                        open: false,
+                        buildProps: ['width', 'min-height', 'padding'],
+                        properties: [
+                            {
+                                type: 'integer',
+                                name: 'Ancho',
+                                property: 'width',
+                                units: ['px', '%'],
+                                defaults: 'auto',
+                                min: 0
+                            },
+                        ],
+                    },
+                    {
+                        name: 'Extra',
+                        open: false,
+                        buildProps: ['background-color', 'box-shadow', 'custom-prop'],
+                        properties: [
+                            {
+                                id: 'custom-prop',
+                                name: 'Custom Label',
+                                property: 'font-size',
+                                type: 'select',
+                                defaults: '32px',
+                                options: [
+                                    { value: '12px', name: 'Tiny' },
+                                    { value: '18px', name: 'Medium' },
+                                    { value: '32px', name: 'Big' }
+                                ]
+                            }
+                        ],
+                    },
+                ],
+            },
+            deviceManager: {
+                devices: [
+                    {
+                        name: 'Desktop',
+                        width: '',
+                    },
+                    {
+                        name: 'Mobile',
+                        width: '320px',
+                        widthMedia: '480px',
+                    },
+                ],
+            },
+        });
+        editor.Panels.addPanel({
+            id: 'panel-top',
+            el: '.panel__top',
+        });
+        editor.Panels.addPanel({
+
+            id: 'basic-actions',
+            el: '.panel__basic-actions',
+            buttons: [
+                {
+                    id: 'visibility',
+                    active: true,
+                    className: 'btn-toggle-borders',
+                    label: '<u>B</u>',
+                    command: 'sw-visibility',
+                },
+                {
+                    id: 'export',
+                    className: 'btn-open-export',
+                    label: 'Exportar',
+                    command: 'export-template',
+                    context: 'export-template',
+                }
+            ]
+        });
+        editor.Commands.add('show-layers', {
+            getRowEl(editor) {
+                return editor.getContainer().closest('.editor-row');
+            },
+            getLayersEl(row) {
+                return row.querySelector('.layers-container');
+            },
+            run(editor, sender) {
+                const lmEl = this.getLayersEl(this.getRowEl(editor));
+            },
+            stop(editor, sender) {
+                const lmEl = this.getLayersEl(this.getRowEl(editor));
+                lmEl.style.display = 'none';
+            }
+        });
+        editor.Commands.add('show-styles', {
+            getRowEl(editor) {
+                return editor.getContainer().closest('.editor-row');
+              },
+              getStyleEl(row) {
+                return row.querySelector('.styles-container');
+              },
+            
+              run(editor, sender) {
+                const smEl = this.getStyleEl(this.getRowEl(editor));
+                smEl.style.display = '';
+              },
+              stop(editor, sender) {
+                const smEl = this.getStyleEl(this.getRowEl(editor));
+                smEl.style.display = 'none';
+              },
+        });
+        editor. Commands.add('show-traits', {
+            getTraitsEl(editor) {
+                const row = editor.getContainer().closest('.editor-row');
+                return row.querySelector('.traits-container');
+            },
+            run(editor, sender) {
+                this.getTraitsEl(editor).style.display = '';
+            },
+            stop(editor, sender) {
+                this.getTraitsEl(editor).style.display = 'none';
+            },
+        });
+        editor.Commands.add('set-device-desktop', {
+            run: (editor) => editor.setDevice('Desktop'),
+        });
+        editor.Commands.add('set-device-mobile', {
+            run: (editor) => editor.setDevice('Mobile')
+        });
+    </script>
 </body>
 </html>
